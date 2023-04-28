@@ -1,5 +1,7 @@
-import Event from './entities/event.entity';
 
+import Event from './entities/event.entity';
+import Workshop from './entities/workshop.entity';
+import {Sequelize} from 'sequelize'
 
 export class EventsService {
 
@@ -85,7 +87,23 @@ export class EventsService {
      */
 
   async getEventsWithWorkshops() {
-    throw new Error('TODO task 1');
+ Event.hasMany(Workshop, { sourceKey: 'id',foreignKey:"eventId", as: 'workshops' });
+ Workshop.belongsTo(Event, { foreignKey: 'eventId', as: 'event' });
+ const events = await Event.findAll({
+      attributes: ['id', 'name', 'createdAt'],
+      include: [
+        {
+          model: Workshop,
+          attributes: ['id', 'start', 'end', 'eventId', 'name', 'createdAt'],
+          order: [['id', 'ASC']],
+        },
+      ],
+      order: [['id', 'ASC']],
+    });
+
+    return events;
+
+
   }
 
   /* TODO: complete getFutureEventWithWorkshops so that it returns events with workshops, that have not yet started
@@ -155,6 +173,26 @@ export class EventsService {
     ```
      */
   async getFutureEventWithWorkshops() {
-    throw new Error('TODO task 2');
+     Event.hasMany(Workshop, { sourceKey: 'id',foreignKey:"eventId", as: 'workshops' });
+ Workshop.belongsTo(Event, { foreignKey: 'eventId', as: 'event' });
+
+    const futureEvents = await Event.findAll({
+      include: [
+        {
+          model: Workshop,
+          where: {
+            id: Sequelize.literal(`(
+              SELECT id FROM Workshops w
+              WHERE w.eventId = Event.id
+              AND w.start > NOW()
+              ORDER BY w.start ASC
+              LIMIT 1
+            )`),
+          },
+        },
+      ],
+    });
+  
+    return futureEvents.filter((event:any) => event?.["workshops"].length > 0);
   }
 }

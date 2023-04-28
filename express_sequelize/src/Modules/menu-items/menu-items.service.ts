@@ -1,3 +1,4 @@
+import MenuItem from './entities/menu-item.entity'
 export class MenuItemsService {
 
   /* TODO: complete getMenuItems so that it returns a nested menu structure
@@ -56,7 +57,10 @@ export class MenuItemsService {
                             "id": 6,
                             "name": "#NoClass pure functional programming",
                             "url": "/events/reactcon/workshops/noclass",
-                            "parentId": 5,
+               }
+            ]
+        }
+    ]                         "parentId": 5,
                             "createdAt": "2021-04-27T15:35:15.000000Z",
                             "children": []
                         },
@@ -69,13 +73,26 @@ export class MenuItemsService {
                             "children": []
                         }
                     ]
-                }
-            ]
-        }
-    ]
+    
   */
 
-  async getMenuItems() {
-    throw new Error('TODO in task 3');
-  }
+                    async getMenuItems(parentId: number | null = null): Promise<MenuItem[]> {
+                        const items = await MenuItem.findAll({
+                          where: { parentId },
+                          order: [['createdAt', 'ASC']]
+                        })
+                      
+                        const result = []
+                      
+                        for (const item of items) {
+                          const children = await this.getMenuItems(item.id)
+                      
+                          result.push({
+                            ...item.toJSON(),
+                            children
+                          })
+                        }
+                      
+                        return result
+                      }
 }
